@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cotizador Balance Lunch</title>
+    <!-- Importación de fuente redondeada Nunito desde Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN para un diseño responsivo y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            lime: '#84cc16',       /* Verde limón fresco */
+                            limeDark: '#65a30d',   /* Verde limón oscuro para hover/activos */
+                            limeLight: '#f7fee7',  /* Fondo verde claro */
+                            orange: '#f97316',     /* Naranja vibrante para acentos */
+                            orangeDark: '#ea580c', /* Naranja para estados activos */
+                            orangeLight: '#fff7ed',/* Fondo naranja suave */
+                            dark: '#1e293b'        /* Texto oscuro suave */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+        }
+        /* Ocultar flechas por defecto de los inputs number */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .active-ring {
+            box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-4 max-w-md mx-auto text-brand-dark bg-slate-50">
+
+    <!-- Encabezado compacto -->
+    <header class="text-center mb-3">
+        <div class="inline-flex items-center justify-center space-x-2 bg-brand-limeLight px-4 py-1.5 rounded-full border border-brand-lime/30 shadow-sm">
+            <span class="text-xl">🥗</span>
+            <h1 class="text-xl font-extrabold text-brand-limeDark tracking-tight">Balance Lunch</h1>
+        </div>
+        <p class="text-xs text-gray-500 font-semibold mt-1">Cotizador Rápido para WhatsApp</p>
+    </header>
+
+    <!-- Contenido Principal / Formulario -->
+    <main class="flex-1 space-y-3">
+        
+        <!-- 1. Selección de Producto -->
+        <section class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                1. Selecciona Producto
+            </label>
+            <div class="grid grid-cols-2 gap-2" id="products-grid">
+                <!-- Opciones generadas por JS para dinamismo, estilizadas como tarjetas amigables -->
+            </div>
+        </section>
+
+        <!-- 2. Cantidad con Botones Grandes + y - -->
+        <section class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                2. Cantidad
+            </label>
+            <div class="flex items-center justify-between space-x-3">
+                <button type="button" onclick="adjustQuantity(-1)" 
+                        class="w-14 h-12 flex items-center justify-center bg-brand-orangeLight text-brand-orange font-black text-2xl rounded-xl border border-brand-orange/20 active:scale-95 transition">
+                    −
+                </button>
+                <input type="number" id="quantity" value="1" min="1" 
+                       onchange="validateQuantity()" 
+                       class="w-full text-center font-black text-2xl text-slate-800 bg-slate-50 border border-slate-200 rounded-xl h-12 focus:outline-none focus:border-brand-lime">
+                <button type="button" onclick="adjustQuantity(1)" 
+                        class="w-14 h-12 flex items-center justify-center bg-brand-limeLight text-brand-limeDark font-black text-2xl rounded-xl border border-brand-lime/30 active:scale-95 transition">
+                    +
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. Canal de Entrega -->
+        <section class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-500">
+                3. Canal de Entrega
+            </label>
+            <div class="grid grid-cols-2 gap-2" id="delivery-grid">
+                <button type="button" onclick="selectDelivery('recojo')" id="btn-delivery-recojo"
+                        class="delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-200 font-bold transition text-left">
+                    <span class="text-base mb-0.5">🏪 Recojo</span>
+                    <span class="text-xs font-semibold text-gray-500">Punto de venta (₡0)</span>
+                </button>
+                <button type="button" onclick="selectDelivery('delivery')" id="btn-delivery-delivery"
+                        class="delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-200 font-bold transition text-left">
+                    <span class="text-base mb-0.5">🛵 Delivery</span>
+                    <span class="text-xs font-semibold text-gray-500">Heredia (₡2,500)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Resumen Dinámico y Botones de Acción -->
+        <section class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+            <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                <span class="text-sm font-bold text-gray-600">Total Cotizado:</span>
+                <span class="text-2xl font-extrabold text-brand-limeDark" id="total-price">₡3,500</span>
+            </div>
+
+            <!-- Previsualización del Resumen para WhatsApp -->
+            <div class="relative">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1 flex justify-between">
+                    <span>Mensaje para cliente</span>
+                    <span>WhatsApp Ready</span>
+                </div>
+                <div id="summary-preview" class="bg-emerald-50/60 border border-emerald-100 p-2.5 rounded-xl text-xs font-medium leading-relaxed text-slate-700 whitespace-pre-line font-sans">
+                    <!-- Contenido del resumen autogenerado -->
+                </div>
+            </div>
+
+            <!-- Botón Copiar al Portapapeles (Acción Principal) -->
+            <button type="button" onclick="copySummary()" id="copy-btn"
+                    class="w-full py-3.5 bg-brand-orange hover:bg-brand-orangeDark text-white font-extrabold text-base rounded-xl shadow-md shadow-brand-orange/20 flex items-center justify-center space-x-2 active:scale-98 transition duration-150">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                <span>Copiar Resumen para WhatsApp</span>
+            </button>
+        </section>
+    </main>
+
+    <!-- Pie de página mínimo -->
+    <footer class="mt-3 text-center text-[10px] text-gray-400 font-semibold">
+        Balance Lunch • Cotizaciones rápidas
+    </footer>
+
+    <!-- LÓGICA DE LA APLICACIÓN (JS) -->
+    <script>
+        // Datos de productos con precios en colones (₡)
+        const products = [
+            { id: 'almuerzo', name: 'Almuerzo Completo', price: 3500, emoji: '🍱' },
+            { id: 'acompanamiento', name: 'Acompañamientos', price: 850, emoji: '🥗' },
+            { id: 'pack_almuerzos', name: 'Pack x5 Almuerzos', price: 12500, emoji: '📦' },
+            { id: 'pack_acomp', name: 'Pack x5 Acompañamientos', price: 7500, emoji: '✨' }
+        ];
+
+        // Opciones de entrega
+        const deliveryOptions = {
+            recojo: { name: 'Recojo en punto de venta', cost: 0, tag: '🏪 Recojo en P.V.' },
+            delivery: { name: 'Delivery en Heredia', cost: 2500, tag: '🛵 Delivery Heredia' }
+        };
+
+        // Estado actual de la cotización
+        let selectedProductId = 'almuerzo';
+        let selectedDeliveryId = 'recojo';
+
+        // Formatear número a colones costarricenses
+        function formatCRC(amount) {
+            return '₡' + amount.toLocaleString('es-CR');
+        }
+
+        // Renderizar cuadrícula de productos
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+
+            products.forEach(prod => {
+                const isSelected = prod.id === selectedProductId;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.onclick = () => selectProduct(prod.id);
+                card.className = `p-2.5 rounded-xl border-2 font-bold text-left flex flex-col justify-between transition ${
+                    isSelected 
+                        ? 'border-brand-lime bg-brand-limeLight text-brand-dark shadow-xs' 
+                        : 'border-slate-100 bg-slate-50/50 text-slate-600 hover:border-slate-200'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between w-full mb-1">
+                        <span class="text-base">${prod.emoji}</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-brand-lime text-white font-extrabold' : 'bg-slate-200 text-slate-600'}">
+                            ${formatCRC(prod.price)}
+                        </span>
+                    </div>
+                    <span class="text-xs leading-snug ${isSelected ? 'text-brand-limeDark font-extrabold' : 'text-slate-700'}">${prod.name}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Seleccionar producto
+        function selectProduct(id) {
+            selectedProductId = id;
+            renderProducts();
+            calculateTotal();
+        }
+
+        // Seleccionar tipo de entrega
+        function selectDelivery(id) {
+            selectedDeliveryId = id;
+            
+            // Actualizar clases de los botones de entrega
+            const btnRecojo = document.getElementById('btn-delivery-recojo');
+            const btnDelivery = document.getElementById('btn-delivery-delivery');
+
+            if (id === 'recojo') {
+                btnRecojo.className = 'delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-brand-lime bg-brand-limeLight text-brand-limeDark font-extrabold shadow-xs transition';
+                btnDelivery.className = 'delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 bg-slate-50/50 text-slate-600 font-bold hover:border-slate-200 transition';
+            } else {
+                btnDelivery.className = 'delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-brand-orange bg-brand-orangeLight text-brand-orangeDark font-extrabold shadow-xs transition';
+                btnRecojo.className = 'delivery-opt flex flex-col items-center justify-center p-2.5 rounded-xl border-2 border-slate-100 bg-slate-50/50 text-slate-600 font-bold hover:border-slate-200 transition';
+            }
+
+            calculateTotal();
+        }
+
+        // Ajustar cantidad (+ o -)
+        function adjustQuantity(delta) {
+            const input = document.getElementById('quantity');
+            let currentVal = parseInt(input.value) || 1;
+            currentVal += delta;
+            if (currentVal < 1) currentVal = 1;
+            input.value = currentVal;
+            calculateTotal();
+        }
+
+        // Validar campo numérico de cantidad
+        function validateQuantity() {
+            const input = document.getElementById('quantity');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) {
+                input.value = 1;
+            }
+            calculateTotal();
+        }
+
+        // Generar resumen y calcular total
+        function calculateTotal() {
+            const product = products.find(p => p.id === selectedProductId);
+            const delivery = deliveryOptions[selectedDeliveryId];
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+
+            const subtotalProduct = product.price * quantity;
+            const grandTotal = subtotalProduct + delivery.cost;
+
+            // Actualizar monto total en pantalla
+            document.getElementById('total-price').textContent = formatCRC(grandTotal);
+
+            // Construir texto con formato amigable para WhatsApp
+            let summaryText = `✨ *Resumen de Cotización - Balance Lunch* ✨\n\n`;
+            summaryText += `🥗 *Producto:* ${product.name}\n`;
+            summaryText += `🔢 *Cantidad:* ${quantity}\n`;
+            summaryText += `💵 *Subtotal:* ${formatCRC(subtotalProduct)}\n`;
+            summaryText += `${delivery.cost > 0 ? '🛵' : '🏪'} *Entrega:* ${delivery.name} (${delivery.cost > 0 ? formatCRC(delivery.cost) : 'Sin costo'})\n`;
+            summaryText += `\n💰 *TOTAL A PAGAR: ${formatCRC(grandTotal)}*\n\n`;
+            summaryText += `¡Quedamos a tu disposición para confirmar tu pedido! 😊`;
+
+            document.getElementById('summary-preview').textContent = summaryText;
+        }
+
+        // Copiar el resumen al portapapeles
+        function copySummary() {
+            const textToCopy = document.getElementById('summary-preview').textContent;
+            
+            // Método robusto para copiar texto
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopyFeedback();
+            } catch (err) {
+                // Fallback moderno
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showCopyFeedback();
+                    });
+                }
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        // Feedback visual al copiar
+        function showCopyFeedback() {
+            const btn = document.getElementById('copy-btn');
+            const originalHTML = btn.innerHTML;
+
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>¡Copiado para WhatsApp! ✅</span>
+            `;
+            btn.classList.remove('bg-brand-orange', 'hover:bg-brand-orangeDark');
+            btn.classList.add('bg-brand-limeDark');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('bg-brand-limeDark');
+                btn.classList.add('bg-brand-orange', 'hover:bg-brand-orangeDark');
+            }, 2000);
+        }
+
+        // Inicialización al cargar la página
+        window.onload = function() {
+            renderProducts();
+            selectDelivery('recojo');
+            calculateTotal();
+        };
+    </script>
+</body>
+</html>
